@@ -16,6 +16,7 @@ public class GameModeSync : AttributesSync
 
     private bool bRedUIIsActive = false;
     private bool bBlueUIIsActive = false;
+
     public void HandleRedTeamScore()
     {
         redTeamScore++;

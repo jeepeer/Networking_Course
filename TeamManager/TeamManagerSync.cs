@@ -5,7 +5,6 @@ using UnityEngine;
 
 public class TeamManagerSync : AttributesSync
 {
-    // Set Team
     [SynchronizableField] [SerializeField] public int teamID = -1;
     [SynchronizableField] [SerializeField] private int redTeam = 0;
     [SynchronizableField] [SerializeField] private int blueTeam = 0;
@@ -14,6 +13,7 @@ public class TeamManagerSync : AttributesSync
     public Alteruna.Avatar avatar;
     public MeshRenderer renderer;
     public MeshRenderer gunRenderer;
+
     public int GetRedTeamSize() { return redTeam; }
     public int GetBlueTeamSize() { return blueTeam; }
 
@@ -73,11 +73,6 @@ public class TeamManagerSync : AttributesSync
         }
     }
 
-    public void UpdateTeamManager()
-    {
-        HandleColorChange();
-    }
-
     public void HandleColorChange()
     {
         InvokeRemoteMethod("UpdateColors");
@@ -86,6 +81,7 @@ public class TeamManagerSync : AttributesSync
     [SynchronizableMethod]
     public void UpdateColors()
     {
+        // Updates the colors for all players localy
         allPlayers = FindObjectsOfType<TeamManagerSync>();
 
         foreach (var player in allPlayers)

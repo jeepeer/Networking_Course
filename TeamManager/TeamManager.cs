@@ -7,27 +7,26 @@ using UnityEngine;
 public class TeamManager : MonoBehaviour
 {
     [SerializeField] private TeamManagerSync sync;
-    [SerializeField] private TeamManagerUI UI;
+    [SerializeField] private TeamManagerUI teamUI;
     [SerializeField] private Button joinRedTeam;
     [SerializeField] private Button joinBlueTeam;
 
-    [SerializeField] private Alteruna.Avatar avatar;
-    [SerializeField] private RocketLauncherGun gun;
+    [SerializeField] private Alteruna.Avatar avatar; // Alteruna Multiplayer SDK
+    [SerializeField] private RocketLauncherGun gun; 
     private int currentTeam;
 
-    private Multiplayer multiplayer;
+    private Multiplayer multiplayer; // Alteruna Multiplayer SDK
 
     private void Start()
     {
-        UI.DisableUI();
+        teamUI.DisableUI();
+        currentTeam = -1;
 
-        if(avatar.IsMe)
+        if (avatar.IsMe)
         {
-            UI.EnableUI();
+            teamUI.EnableUI();
             StartCoroutine(SetUpUI());
         }
-
-        currentTeam = -1;
 
         if (multiplayer == null)
         {
@@ -37,9 +36,11 @@ public class TeamManager : MonoBehaviour
                 Debug.LogError("Unable to find a active object of type Multiplayer.");
             }
         }
+
         // Multiplayer setup
         if (multiplayer)
         {
+            // Events for other players joining and leaving
             multiplayer.OtherUserJoined.AddListener(HandleJoined);
             multiplayer.OtherUserLeft.AddListener(OtherPlayerLeft); 
         }
@@ -49,33 +50,6 @@ public class TeamManager : MonoBehaviour
         joinBlueTeam.onClick.AddListener(() => { JoinTeam((int)Team.blue); });
     }
 
-    public void HandleJoined(Multiplayer multiplayer, User user)
-    {
-        StartCoroutine(UpdateNewPlayer());
-    }
-
-    IEnumerator SetUpUI()
-    {
-        yield return new WaitForSeconds(1f);
-        sync.UpdateTeamSize();
-
-        int redTeamSize = sync.GetRedTeamSize();
-        int blueTeamSize = sync.GetBlueTeamSize();
-
-        UI.UpdateTeamUI(redTeamSize, blueTeamSize);
-
-        Cursor.lockState = CursorLockMode.None;
-        Cursor.visible = true;
-    }
-
-    IEnumerator UpdateNewPlayer()
-    {
-        yield return new WaitForSeconds(0.5f);
-        sync.AssignTeam(currentTeam);
-        sync.UpdateTeamSize();
-        sync.UpdateTeamManager();
-    }
-
     public void JoinTeam(int team)
     {
         switch (team)
@@ -83,37 +57,69 @@ public class TeamManager : MonoBehaviour
             case (int)Team.red:
                 sync.AssignTeam((int)Team.red);
                 sync.UpdateTeamSize();
-                sync.UpdateTeamManager();
+                sync.HandleColorChange();
                 currentTeam = (int)Team.red;
                 break;
 
             case (int)Team.blue:
                 sync.AssignTeam((int)Team.blue);
                 sync.UpdateTeamSize();
-                sync.UpdateTeamManager();
+                sync.HandleColorChange();
                 currentTeam = (int)Team.blue;
                 break;
         }
 
-        UI.DisableUI();
+        // Remove the team UI
+        teamUI.DisableUI();
 
+        // Re-enable the mouse
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
 
         gun.bJoinedTeam = true;
 
+        // Remove buttons
         joinRedTeam.gameObject.SetActive(false);
         joinBlueTeam.gameObject.SetActive(false);
+    }
+
+    IEnumerator SetUpUI()
+    {
+        // 1f to make sure UpdateNewPlayer() has the time to run
+        yield return new WaitForSeconds(1f);
+        sync.UpdateTeamSize();
+
+        int redTeamSize = sync.GetRedTeamSize();
+        int blueTeamSize = sync.GetBlueTeamSize();
+
+        teamUI.UpdateTeamUI(redTeamSize, blueTeamSize);
+
+        Cursor.lockState = CursorLockMode.None;
+        Cursor.visible = true;
+    }
+
+    public void HandleJoined(Multiplayer multiplayer, User user)
+    {
+        StartCoroutine(UpdateNewPlayer());
+    }
+
+    IEnumerator UpdateNewPlayer()
+    {
+        // 0.5f so it doesn't overlap with OtherUserLeft 
+        yield return new WaitForSeconds(0.5f);
+        sync.AssignTeam(currentTeam);
+        sync.UpdateTeamSize();
+        sync.HandleColorChange();
+    }
+
+    private void OtherPlayerLeft(Multiplayer multiplayer, User user)
+    {
+        StartCoroutine(UpdatePlayerLeft());
     }
 
     IEnumerator UpdatePlayerLeft()
     {
         yield return new WaitForSeconds(0.5f);
         sync.UpdateTeamSize();
-    }
-
-    private void OtherPlayerLeft(Multiplayer multiplayer, User user)
-    {
-        StartCoroutine(UpdatePlayerLeft());
     }
 }
