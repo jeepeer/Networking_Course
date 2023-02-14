@@ -28,7 +28,7 @@ public class GameModeManager : MonoBehaviour
                 }
                 break;
 
-            case 1:
+            case (int)Team.blue:
                 int blueScore = sync.GetBlueTeamScore();
                 if (blueScore >= winScore)
                 {
